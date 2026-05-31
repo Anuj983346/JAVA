@@ -4,9 +4,12 @@ import com.ciffarf.vehicle_service.Model.Vehicle;
 import com.ciffarf.vehicle_service.Repository.VehicleRepository;
 import com.ciffarf.vehicle_service.dto.VehicleRequestDto;
 import com.ciffarf.vehicle_service.dto.VehicleResponseDto;
+import com.ciffarf.vehicle_service.event.VehicleCreatedEvent;
 import com.ciffarf.vehicle_service.exception.VehicleNotFoundException;
 import com.ciffarf.vehicle_service.mapper.VehicleMapper;
+import com.ciffarf.vehicle_service.messaging.VehicleProducer;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,16 +20,25 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final VehicleMapper vehicleMapper;
 
+    private final VehicleProducer vehicleProducer;
+
     public VehicleResponseDto saveVehicleData(
             VehicleRequestDto dto) {
 
-        if (vehicleRepository.existsByVehicleNumber(
+        log.info("Creating vehicle with number {}",
+                dto.getVehicleNumber());
+
+        if(vehicleRepository.existsByVehicleNumber(
                 dto.getVehicleNumber())) {
+
+            log.error("Vehicle already exists {}",
+                    dto.getVehicleNumber());
 
             throw new RuntimeException(
                     "Vehicle already registered");
@@ -38,10 +50,17 @@ public class VehicleService {
         Vehicle savedVehicle =
                 vehicleRepository.save(vehicle);
 
-        return vehicleMapper
-                .toResponseDto(savedVehicle);
-    }
+        vehicleProducer.sendVehicleCreatedEvent(
+                new VehicleCreatedEvent(
+                        savedVehicle.getVehicleNumber(),
+                        savedVehicle.getOwnerName()
+                ));
 
+        log.info("Vehicle saved successfully {}",
+                savedVehicle.getVehicleNumber());
+
+        return vehicleMapper.toResponseDto(savedVehicle);
+    }
     public List<VehicleResponseDto> getAllVehicles() {
 
         return vehicleRepository
