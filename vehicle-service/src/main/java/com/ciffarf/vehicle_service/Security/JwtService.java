@@ -15,17 +15,20 @@ public class JwtService {
             "mySuperSecretKeyForJwtAuthentication2026SecureKey";
 
 
-    public String generateToken(String username){
+    public String generateToken(
+            String username,
+            String role) {
+
         return Jwts.builder()
                 .setSubject(username)
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(
-                        new Date(System.currentTimeMillis() + 3000000 ))
+                        new Date(System.currentTimeMillis() + 3000000))
                 .signWith(
                         SignatureAlgorithm.HS256,
-                        SECRET
-                ).compact();
-
+                        SECRET)
+                .compact();
     }
 
     public String extractUsername(String token){

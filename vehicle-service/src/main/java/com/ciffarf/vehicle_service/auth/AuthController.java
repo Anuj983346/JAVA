@@ -24,9 +24,12 @@ public class AuthController {
 
             String token =
                     jwtService.generateToken(
-                            request.getUsername());
+                            request.getUsername(),
+                            "ADMIN");
 
-            return new AuthResponse(token);
+            return new AuthResponse(
+                    token,
+                    "ADMIN");
         }
 
         throw new RuntimeException(
