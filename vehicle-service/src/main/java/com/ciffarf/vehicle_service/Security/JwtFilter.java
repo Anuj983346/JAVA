@@ -27,34 +27,32 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         System.out.println("JWT FILTER HIT");
+
         String path = request.getServletPath();
 
+        // Public URLs
         if (path.startsWith("/auth")
                 || path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs")) {
+                || path.startsWith("/v3/api-docs")
+                || path.equals("/swagger-ui.html")
+                || path.equals("/api/vehicles/orders")) {
 
             filterChain.doFilter(request, response);
             return;
         }
 
-        String authHeader =
-                request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null
-                || !authHeader.startsWith("Bearer ")) {
-
-            response.setStatus(
-                    HttpServletResponse.SC_UNAUTHORIZED);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
         try {
 
-            String token =
-                    authHeader.substring(7);
+            String token = authHeader.substring(7);
 
-            String username =
-                    jwtService.extractUsername(token);
+            String username = jwtService.extractUsername(token);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
@@ -62,19 +60,15 @@ public class JwtFilter extends OncePerRequestFilter {
                             null,
                             Collections.emptyList());
 
-            SecurityContextHolder
-                    .getContext()
+            SecurityContextHolder.getContext()
                     .setAuthentication(authentication);
 
         } catch (Exception e) {
 
-            response.setStatus(
-                    HttpServletResponse.SC_UNAUTHORIZED);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        filterChain.doFilter(
-                request,
-                response);
+        filterChain.doFilter(request, response);
     }
 }
